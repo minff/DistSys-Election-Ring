@@ -1,8 +1,11 @@
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 public class Node {
 	private static final char NON_PARTICIPANT = 1;
@@ -18,6 +21,8 @@ public class Node {
 	int id;
 	private char status;
 	private ListeningThread thread;
+	private Logger logger;
+	protected static int totalMSgSent = 0;
 	public void init(int id, Node nextNode) {
 		// TODO Auto-generated method stub
 		this.id = id;
@@ -27,6 +32,10 @@ public class Node {
 		
 		thread = new ListeningThread(getPort(),this);
 		thread.start();
+		
+		logger = Logger.getLogger(Integer.toString(id));
+		logger.addHandler(new StreamHandler(System.out, new SimpleFormatter()));
+		logger.setLevel(Level.OFF);
 	}
 	
 	public void beginElection() {
@@ -43,16 +52,23 @@ public class Node {
 	public void onReceived(String msg){
 		String[] s = msg.split(SEPERATOR);
 		int receivedId = Integer.parseInt(s[1]);
-		if (s[0] == ELECTION){
+
+		if (s[0].equals(ELECTION)){
 			// ELECTION
 			if (receivedId > id){
 				// forward msg
+				logger.info(receivedId+">"+id);
 				sendMsg(msg);
 				
 			} else if (receivedId < id){
+				
+				logger.info(receivedId+"<"+id);
 				if (status == PARTICIPANT) return;
+
 				beginElection();
 			} else if (receivedId == id){
+
+				logger.info(receivedId+"=="+id);
 				status = NON_PARTICIPANT;
 				// sent elected msg
 				String m = String.format("%s%s%s", ELECTED, SEPERATOR, id);
@@ -65,6 +81,8 @@ public class Node {
 			if (status == PARTICIPANT || receivedId != id){
 				// forward msg
 				sendMsg(msg);
+			} else {
+				System.out.println("Total msg Sent: "+ totalMSgSent);
 			}
 			status = NON_PARTICIPANT;
 		}
@@ -78,7 +96,8 @@ public class Node {
 					  Socket s = new Socket (HOST, serverPort);
 					  DataOutputStream out = new DataOutputStream(s.getOutputStream());
 					  out.writeUTF (msg);
-					  System.out.println("Node: "+ id + " Sent: " + msg);
+					  totalMSgSent  ++;
+//					  System.out.println("Node: "+ id + " Sent: " + msg);
 					  s.close();
 				    }catch (UnknownHostException e){
 					  System.out.println("UnknownHostException:"+ e.getMessage());

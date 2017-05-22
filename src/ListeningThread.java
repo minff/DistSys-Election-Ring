@@ -27,13 +27,13 @@ public class ListeningThread extends Thread {
 			    msg = in.readUTF();
 			    clientSocket.close();
 			    
-			    System.out.println("Node: "+ node.id + " Received: "+msg);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
-			
+
+		    System.out.println("Node: "+ node.id + " Received: "+msg);
 	
 		    node.onReceived(msg);
 		}
