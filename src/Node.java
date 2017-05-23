@@ -37,7 +37,7 @@ public class Node {
 		logger.addHandler(new StreamHandler(System.out, new SimpleFormatter()));
 		logger.setLevel(Level.OFF);
 	}
-	
+
 	public void beginElection() {
 		// send election msg with own id
 		String msg = String.format("%s%s%s", ELECTION, SEPERATOR, id);
@@ -48,7 +48,11 @@ public class Node {
 	public int getPort(){
 		return PORT_BASE + id;
 	}
-	
+
+	synchronized private void notifyElectionCompleted() {
+		System.out.println("Total msg Sent: "+ totalMSgSent);
+		notify();
+	}
 	public void onReceived(String msg){
 		String[] s = msg.split(SEPERATOR);
 		int receivedId = Integer.parseInt(s[1]);
@@ -82,7 +86,8 @@ public class Node {
 				// forward msg
 				sendMsg(msg);
 			} else {
-				System.out.println("Total msg Sent: "+ totalMSgSent);
+
+				notifyElectionCompleted();
 			}
 			status = NON_PARTICIPANT;
 		}
